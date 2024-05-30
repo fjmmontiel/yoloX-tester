@@ -1,0 +1,41 @@
+services:
+  ai-e2e-backend:
+    image: ai-e2e-backend:0.0.1-SNAPSHOT
+    container_name: ai-e2e-backend
+    hostname: ai-e2e-backend
+    environment:
+      - LOCAL_STORAGE_PATH=/data-files
+      - MONGO_HOST=mongo
+      - MONGO_PORT=27017
+      - MONGO_DB_DATABASE=ai-e2e-boilerplate
+      - DEBUG=true
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./integration/data-files/:/data-files
+      - ./integration/tmp:/tmp
+      - ./backend/app:/app
+
+  ai-e2e-frontend:
+    image: ai-e2e-frontend:0.0.1-SNAPSHOT
+    container_name: ai-e2e-frontend
+    hostname: ai-e2e-frontend
+    environment:
+      - API_URL=http://ai-e2e-backend:8000
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "8501:8501"
+
+  mongo:
+    image: arm64v8/mongo
+    container_name: mongo
+    hostname: mongo
+    volumes:
+      - ./integration/mongodb/data:/data/db
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+      - MONGODB_ENABLE_DIRECTORY_PER_DB=yes
+    ports:
+      - "27017:27017"
+    restart: always
