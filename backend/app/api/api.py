@@ -5,15 +5,14 @@ from fastapi import (
     File
 )
 from fastapi.responses import StreamingResponse
-from core.core_functions import DataModel
+from core.core_functions import CoreFunctions
 from db.db_client import db
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 logger = logging.getLogger(__name__)
 
-
-data_model = DataModel(db=db)
+data_model = CoreFunctions(db=db)
 
 app = FastAPI()
 

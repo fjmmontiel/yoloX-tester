@@ -1,20 +1,16 @@
 import onnxruntime as ort
 import numpy as np
 import cv2
-import logging
+from util.logger import Logger
 from ml.abstract_class_definition import onnx_model
 from ml.yolox_utils import COCO_CLASSES, _COLORS
-
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-logger = logging.getLogger(__name__)
-logger.info(f"LOADED MODULE!")
 
 class YoloX(onnx_model):
 
     def __init__(self):
         self.session = None
         self.load_model()
+        self.logger = Logger(self.__class__).get_logger()
 
     def load_model(self):
         self.session = ort.InferenceSession("./ml/image_models_files/yolox_s.onnx")
