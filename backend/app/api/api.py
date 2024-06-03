@@ -54,3 +54,9 @@ async def get_summary():
     summary = await data_model.get_summary()
     logging.info("Summary properly fetched")
     return summary
+
+@app.on_event("startup")
+async def startup_event():
+    logging.info("Loading model!")
+    await data_model.load_model()
+    logging.info("Model loaded succesfully!")

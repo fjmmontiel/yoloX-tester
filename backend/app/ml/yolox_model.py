@@ -4,13 +4,71 @@ import cv2
 import os
 import logging
 from util.camel_base_model import CamelBaseModel
+from ml.abstract_class_definition import onnx_model
 from ml.yolox_utils import COCO_CLASSES, _COLORS
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 logger = logging.getLogger(__name__)
 logger.info(f"LOADED MODULE!")
-class ImageModelFunctions(CamelBaseModel):
+
+class YoloX(onnx_model):
+
+    def __init__(self):
+        self.session = None
+        self.load_model()
+
+    def load_model(self):
+        self.session = ort.InferenceSession("./ml/image_models_files/yolox_s.onnx")
+
+    def preprocess(self,img, input_size, swap=(2, 0, 1)):
+        if len(img.shape) == 3:
+            padded_img = np.ones((input_size[0], input_size[1], 3), dtype=np.uint8) * 114
+        else:
+            padded_img = np.ones(input_size, dtype=np.uint8) * 114
+
+        r = min(input_size[0] / img.shape[0], input_size[1] / img.shape[1])
+        resized_img = cv2.resize(
+            img,
+            (int(img.shape[1] * r), int(img.shape[0] * r)),
+            interpolation=cv2.INTER_LINEAR,
+        ).astype(np.uint8)
+        padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
+
+        padded_img = padded_img.transpose(swap)
+        padded_img = np.ascontiguousarray(padded_img, dtype=np.float32)
+        return padded_img, r
+    
+
+    def predict(self,image, filepath):
+        input_shape = (640,640)
+        img, ratio = self.preprocess(image, input_shape)
+        
+        ort_inputs = {self.session.get_inputs()[0].name: img[None, :, :, :]}
+        output = self.session.run(None, ort_inputs)
+        predictions = self.demo_postprocess(output[0], input_shape)[0]
+
+        boxes = predictions[:, :4]
+        scores = predictions[:, 4:5] * predictions[:, 5:]
+        boxes_xyxy = np.ones_like(boxes)
+        boxes_xyxy[:, 0] = boxes[:, 0] - boxes[:, 2]/2.
+        boxes_xyxy[:, 1] = boxes[:, 1] - boxes[:, 3]/2.
+        boxes_xyxy[:, 2] = boxes[:, 0] + boxes[:, 2]/2.
+        boxes_xyxy[:, 3] = boxes[:, 1] + boxes[:, 3]/2.
+        boxes_xyxy /= ratio
+        dets = self.multiclass_nms(boxes_xyxy, scores, nms_thr=0.6, score_thr=0.1, class_agnostic=False)
+        if dets is not None:
+            final_boxes, final_scores, final_cls_inds = dets[:, :4], dets[:, 4], dets[:, 5]
+            crops_info = self.extract_crops_info(final_boxes, final_scores, final_cls_inds,
+                            conf=0.45, class_names=COCO_CLASSES)
+            annotated_image = self.annotate_image(image, crops_info)
+            cv2.imwrite(filepath,annotated_image)
+            return annotated_image, crops_info
+        else:
+            cv2.imwrite(filepath,annotated_image)
+            return image, []
+
+
 
     def nms(self,boxes, scores, nms_thr):
         """Single class NMS implemented in Numpy."""
@@ -79,7 +137,7 @@ class ImageModelFunctions(CamelBaseModel):
             t_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)[0]
             cv2.rectangle(img, (x0, y0 - t_size[1]), (x0 + t_size[0], y0), color, -1)
             cv2.putText(img, label, (x0, y0), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
-
+        
         return img
 
     def demo_postprocess(self,outputs, img_size, p6=False):
@@ -152,53 +210,4 @@ class ImageModelFunctions(CamelBaseModel):
                 [valid_boxes[keep], valid_scores[keep, None], valid_cls_inds[keep, None]], 1
             )
         return dets
-
-    def preprocess(self,img, input_size, swap=(2, 0, 1)):
-        if len(img.shape) == 3:
-            padded_img = np.ones((input_size[0], input_size[1], 3), dtype=np.uint8) * 114
-        else:
-            padded_img = np.ones(input_size, dtype=np.uint8) * 114
-
-        r = min(input_size[0] / img.shape[0], input_size[1] / img.shape[1])
-        resized_img = cv2.resize(
-            img,
-            (int(img.shape[1] * r), int(img.shape[0] * r)),
-            interpolation=cv2.INTER_LINEAR,
-        ).astype(np.uint8)
-        padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
-
-        padded_img = padded_img.transpose(swap)
-        padded_img = np.ascontiguousarray(padded_img, dtype=np.float32)
-        return padded_img, r
-    
-    def predict_image(self,image):
-        input_shape = (640,640)
-        origin_img = image
-        img, ratio = self.preprocess(origin_img, input_shape)
-
-        session = ort.InferenceSession("./ml/image_models_files/yolox_s.onnx")
-        print(f"Device issssssss")
-        print(ort.get_device())
-        print(f"***********")
-        ort_inputs = {session.get_inputs()[0].name: img[None, :, :, :]}
-        output = session.run(None, ort_inputs)
-        predictions = self.demo_postprocess(output[0], input_shape)[0]
-
-        boxes = predictions[:, :4]
-        scores = predictions[:, 4:5] * predictions[:, 5:]
-        boxes_xyxy = np.ones_like(boxes)
-        boxes_xyxy[:, 0] = boxes[:, 0] - boxes[:, 2]/2.
-        boxes_xyxy[:, 1] = boxes[:, 1] - boxes[:, 3]/2.
-        boxes_xyxy[:, 2] = boxes[:, 0] + boxes[:, 2]/2.
-        boxes_xyxy[:, 3] = boxes[:, 1] + boxes[:, 3]/2.
-        boxes_xyxy /= ratio
-        dets = self.multiclass_nms(boxes_xyxy, scores, nms_thr=0.6, score_thr=0.1)
-        if dets is not None:
-            final_boxes, final_scores, final_cls_inds = dets[:, :4], dets[:, 4], dets[:, 5]
-            crops_info = self.extract_crops_info(final_boxes, final_scores, final_cls_inds,
-                            conf=0.45, class_names=COCO_CLASSES)
-            annotated_image = self.annotate_image(origin_img, crops_info)
-            return annotated_image, crops_info
-        else:
-            return origin_img, []
 

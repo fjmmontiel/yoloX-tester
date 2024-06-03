@@ -1,2 +1,4 @@
 *.csv
 *.pyc
+integration/*
+*.DS_STORE

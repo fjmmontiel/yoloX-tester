@@ -4,7 +4,7 @@ from util.camel_base_model import CamelBaseModel
 import cv2
 import numpy as np
 from io import BytesIO
-from ml.ImageModelsFunctions import ImageModelFunctions
+from ml.yolox_model import YoloX
 from core.data_models import *
 
 logging.basicConfig(level=logging.DEBUG)
@@ -57,14 +57,22 @@ class DataModel(CamelBaseModel):
         except Exception as e:
             logger.error(f"Failed to retrieve images: {e}")
             return []
-        
+
+    # Model loading
+    async def load_model(self):
+        try:
+            YoloX().load_model()
+        except Exception as e:
+            logger.error(f"Failed to load model!: {e}")
+
+
+
     # Data prediction
     async def predict_yolox(self, imag_bytes, filename):
         logger.info("Loading image to compute prediction!")
         image = await self.load_image_from_bytes(image_bytes=imag_bytes)
-        predicted_image, crops_info = ImageModelFunctions().predict_image(image)
         filepath = f"../data-files/{filename}"
-        cv2.imwrite(filepath,image)
+        predicted_image, crops_info = YoloX().predict(image, filepath)
         # Generate image_summary dictionary
         image_summary = {}
         for crop in crops_info:
