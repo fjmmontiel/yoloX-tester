@@ -1,9 +1,7 @@
 import onnxruntime as ort
 import numpy as np
 import cv2
-import os
 import logging
-from util.camel_base_model import CamelBaseModel
 from ml.abstract_class_definition import onnx_model
 from ml.yolox_utils import COCO_CLASSES, _COLORS
 
@@ -67,8 +65,6 @@ class YoloX(onnx_model):
         else:
             cv2.imwrite(filepath,annotated_image)
             return image, []
-
-
 
     def nms(self,boxes, scores, nms_thr):
         """Single class NMS implemented in Numpy."""
