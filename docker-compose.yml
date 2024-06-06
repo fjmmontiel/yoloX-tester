@@ -29,6 +29,7 @@ services:
 
   mongo:
     image: arm64v8/mongo
+    # image: amd64/mongo
     container_name: mongo
     hostname: mongo
     volumes:
