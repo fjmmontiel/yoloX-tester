@@ -40,13 +40,6 @@ with tab1:
                         # Display error if something went wrong during processing
                         col2.error("Failed to process image")
 
-    # Provide a button to manually clear the file uploader
-    with col1:
-        if st.button('Clear Image'):
-            # Clear the file uploader by manipulating the key
-            st.session_state['file_uploader'] = None
-            st.experimental_rerun()  # Rerun the script to reset the UI without re-uploading the image
-
 
 
 with tab2:
