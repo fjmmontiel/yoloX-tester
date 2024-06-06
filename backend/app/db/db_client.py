@@ -3,7 +3,7 @@ import logging
 import pymongo
 
 logger = logging.getLogger(__name__)
-DATABASE = os.environ.get("DATABASE", "ai-e2e-boilerplate")
+DATABASE = os.environ.get("MONGO_DB_DATABASE", "ai-e2e-boilerplate")
 HOST = os.environ.get("HOST", "mongo")
 PORT = os.environ.get("PORT", 27017)
 

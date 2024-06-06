@@ -88,13 +88,21 @@ class CoreFunctions:
     
     # Prediction data management functions
     async def image_summary(self, id:str):
-        image = list(self.db["images"].find({"id": id}, {"_id": 0}))[0]
-        return Image.parse_obj(image).image_summary
+        try:
+            image = list(self.db["images"].find({"id": id}, {"_id": 0}))[0]
+            return Image.parse_obj(image).image_summary
+        except Exception as e:
+            self.logger.error(f"Image summary hasn't been retrieved properly!")
+            return {}
     
     async def get_summary(self):
-        images = self.db["images"].find({})
-        summary_list = []
-        for image in images:
-            image_summary = {"id":image["id"],"originalFileName":image["originalFileName"],"crops": image["crops"],"imageSummary":image["imageSummary"]}
-            summary_list.append(image_summary)
-        return summary_list
+        try:
+            images = self.db["images"].find({})
+            summary_list = []
+            for image in images:
+                image_summary = {"id":image["id"],"originalFileName":image["originalFileName"],"crops": image["crops"],"imageSummary":image["imageSummary"]}
+                summary_list.append(image_summary)
+            return summary_list
+        except Exception as e:
+            self.logger.error(f"Global summary hasn't been retrieved properly!")
+            return []

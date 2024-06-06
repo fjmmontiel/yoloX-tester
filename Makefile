@@ -1,6 +1,5 @@
-IMAGE_NAME_BACKEND = ai-e2e-backend
-IMAGE_NAME_FRONTEND = ai-e2e-frontend
-
+IMAGE_NAME_BACKEND = yolox-backend
+IMAGE_NAME_FRONTEND = yolox-frontend
 IMAGE_VERSION_BACKEND = $(shell cat backend/version.txt)
 IMAGE_VERSION_FRONTEND = $(shell cat frontend/version.txt)
 
