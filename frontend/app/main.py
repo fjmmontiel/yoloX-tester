@@ -23,50 +23,61 @@ with tab1:
     # Layout for Data Processing
     col1, col2 = st.columns([1, 2])
 
-    with col1: 
-        file = st.file_uploader("Select your image", type=["jpg", "jpeg", "png", "gif", "bmp", "tif", "tiff"])
-        if file is not None:
-            with st.spinner('Processing... Please wait'):
-                response = requests.post(f"http://{api_url}/upload-image/", files={"file": (file.name, file.getvalue())})
-                if response.status_code == 200:
-                    col2.image(response.content, caption="Processed Image", use_column_width=True)
-                else:
-                    col2.error("Failed to process image")
+    with col1:
+        file = st.file_uploader("Select your image", type=["jpg", "jpeg", "png", "gif", "bmp", "tif", "tiff"], key='file_uploader')
+        
+        # Button to trigger the upload process
+        if st.button("Upload Image"):
+            if file is not None:
+                with st.spinner('Processing... Please wait'):
+                    # Sending the image to the backend for processing
+                    response = requests.post(f"http://{api_url}/upload-image/", files={"file": (file.name, file.getvalue())})
+                    
+                    if response.status_code == 200:
+                        # Display the processed image from the backend in col2
+                        col2.image(response.content, caption="Processed Image", use_column_width=True)
+                    else:
+                        # Display error if something went wrong during processing
+                        col2.error("Failed to process image")
+
+    # Provide a button to manually clear the file uploader
+    with col1:
+        if st.button('Clear Image'):
+            # Clear the file uploader by manipulating the key
+            st.session_state['file_uploader'] = None
+            st.experimental_rerun()  # Rerun the script to reset the UI without re-uploading the image
+
 
 
 with tab2:
-    col1, col2 = st.columns([1, 2])
+    col1, col2 = st.columns([1,2])
 
-    # Fetch image list when entering tab2
-    if not st.session_state.get('fetch_images_triggered', False):
-        images = requests.get(f"http://{api_url}/list-images").json()
-        st.session_state.images = images
-        st.session_state.fetch_images_triggered = True
-    else:
-        images = st.session_state.images
+    # A button in col1 to manually trigger a refresh of the image list
+    with col1:
+        if st.button('Refresh Images'):
+            # Clear existing image data from session state when button is pressed
+            if 'images' in st.session_state:
+                del st.session_state['images']
+            
+            # Fetch new image data from the backend and update the session state
+            new_images = requests.get(f"http://{api_url}/list-images").json()
+            st.session_state.images = new_images
 
-    with col1: 
-        if images:
-            image_names = ["Select an image"] + [img["originalFileName"] for img in images]
-
+    # Display images if available in col2
+    with col1:
+        if 'images' in st.session_state and st.session_state.images:
+            # Generate list of image names for selection
+            image_names = ["Select an image"] + [img["originalFileName"] for img in st.session_state.images]
             selected_image_name = st.selectbox("Select an image to view", image_names)
 
+            # Display the selected image
             if selected_image_name and selected_image_name != "Select an image":
-                selected_image = next((img for img in images if img["originalFileName"] == selected_image_name), None)
+                selected_image = next((img for img in st.session_state.images if img["originalFileName"] == selected_image_name), None)
                 if selected_image:
                     selected_image_id = selected_image["id"]
                     response = requests.get(f"http://{api_url}/get-image/{selected_image_id}")
-                    if response.status_code == 200:
-                        col2.image(response.content, caption="Processed Image", use_column_width=True)
-                        # Fetch and display histogram
-                        histogram_response = requests.get(f"http://{api_url}/get-histogram-data/{selected_image_id}")
-                        if histogram_response.status_code == 200:
-                            histogram_data = histogram_response.json()
-                            df = pd.DataFrame.from_dict(histogram_data, orient='index', columns=['Count'])
-                            st.write("Histogram of Predicted Classes:")
-                            st.bar_chart(df)
-                        else:
-                            st.error("Failed to fetch histogram data")
+                    col2.image(response.content, caption="Selected Image", use_column_width=True)
+
 
 
 with tab3:
