@@ -15,6 +15,25 @@ class YoloX(onnx_model):
     def load_model(self):
         self.session = ort.InferenceSession("./ml/image_models_files/yolox_s.onnx")
 
+    def normalize_input(self, img):
+        """
+        Normalize the image to have as maximum 1024 x 720, without breaking the aspect ratio of the img.
+        For that let's get the ratio to scale the image.
+        """
+        max_height = 1024
+        max_width = 720
+
+        height, width = img.shape[:2]
+
+        scaling_factor = min(max_height / height, max_width / width)
+
+        new_height = int(height * scaling_factor)
+        new_width = int(width * scaling_factor)
+
+        resized_img = cv2.resize(img, (new_width, new_height), interpolation=cv2.INTER_AREA)
+
+        return resized_img
+
     def preprocess(self,img, input_size, swap=(2, 0, 1)):
         if len(img.shape) == 3:
             padded_img = np.ones((input_size[0], input_size[1], 3), dtype=np.uint8) * 114
@@ -36,7 +55,8 @@ class YoloX(onnx_model):
 
     def predict(self,image, filepath):
         input_shape = (640,640)
-        img, ratio = self.preprocess(image, input_shape)
+        resized_image = self.normalize_input(image)
+        img, ratio = self.preprocess(resized_image, input_shape)
         
         ort_inputs = {self.session.get_inputs()[0].name: img[None, :, :, :]}
         output = self.session.run(None, ort_inputs)
@@ -55,7 +75,7 @@ class YoloX(onnx_model):
             final_boxes, final_scores, final_cls_inds = dets[:, :4], dets[:, 4], dets[:, 5]
             crops_info = self.extract_crops_info(final_boxes, final_scores, final_cls_inds,
                             conf=0.45, class_names=COCO_CLASSES)
-            annotated_image = self.annotate_image(image, crops_info)
+            annotated_image = self.annotate_image(resized_image, crops_info)
             cv2.imwrite(filepath,annotated_image)
             return annotated_image, crops_info
         else:
