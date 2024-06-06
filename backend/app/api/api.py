@@ -35,16 +35,16 @@ async def list_images():
     images = data_model.list_images()
     return images
 
-@app.get("/get-image/{original_filename}")
-async def get_image(original_filename: str):
-    logging.info(f"Getting content for image: {original_filename}")
-    image_bytes = await data_model.get_bytes_original_filename(original_filename)
+@app.get("/get-image/{id}")
+async def get_image(id: str):
+    logging.info(f"Getting content for image with id: {id}")
+    image_bytes = await data_model.get_bytes_from_image_id(id)
     return StreamingResponse(image_bytes, media_type="image/png")
 
-@app.get("/get-histogram-data/{original_filename}")
-async def get_histogram_data(original_filename: str):
-    logging.info(f"Getting histogram-data for image: {original_filename}")
-    image_summary = await data_model.image_summary(original_filename)
+@app.get("/get-histogram-data/{id}")
+async def get_histogram_data(id: str):
+    logging.info(f"Getting histogram-data for image with id: {id}")
+    image_summary = await data_model.image_summary(id)
     return image_summary
 
 @app.get("/get-summary")

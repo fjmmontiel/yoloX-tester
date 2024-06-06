@@ -40,16 +40,16 @@ class CoreFunctions:
     def list_images(self) -> list[dict[str, Any]]:
         try:
             images = list(self.db["images"].find({}, {"_id": 0}))  # Exclude the MongoDB ObjectId from results
-            self.logger.info("Images retrieved from MongoDB!")
+            self.logger.debug("Images retrieved from MongoDB!")
             return images
         except Exception as e:
             self.logger.error(f"Failed to retrieve images: {e}")
             return []
         
-    async def get_bytes_original_filename(self,original_filename:str):
+    async def get_bytes_from_image_id(self,image_id:str):
         try:
-            images = list(self.db["images"].find({"originalFileName": original_filename}, {"_id": 0}))  # Exclude the MongoDB ObjectId from results
-            self.logger.info(f"Here are the images retrieved from MongoDB: {images}")
+            images = list(self.db["images"].find({"id": image_id}, {"_id": 0}))  # Exclude the MongoDB ObjectId from results
+            self.logger.debug(f"Here are the images retrieved from MongoDB: {images}")
             filepath = images[0]["filePath"]
             image = cv2.imread(filepath)
             return await self.return_bytes_from_image(image=image)
@@ -87,8 +87,8 @@ class CoreFunctions:
         return predicted_image_bytes
     
     # Prediction data management functions
-    async def image_summary(self, original_filename:str):
-        image = list(self.db["images"].find({"originalFileName": original_filename}, {"_id": 0}))[0]
+    async def image_summary(self, id:str):
+        image = list(self.db["images"].find({"id": id}, {"_id": 0}))[0]
         return Image.parse_obj(image).image_summary
     
     async def get_summary(self):

@@ -50,11 +50,12 @@ with tab2:
             if selected_image_name and selected_image_name != "Select an image":
                 selected_image = next((img for img in images if img["originalFileName"] == selected_image_name), None)
                 if selected_image:
-                    response = requests.get(f"http://ai-e2e-backend:8000/get-image/{selected_image_name}")
+                    selected_image_id = selected_image["id"]
+                    response = requests.get(f"http://ai-e2e-backend:8000/get-image/{selected_image_id}")
                     if response.status_code == 200:
                         col2.image(response.content, caption="Processed Image", use_column_width=True)
                         # Fetch and display histogram
-                        histogram_response = requests.get(f"http://ai-e2e-backend:8000/get-histogram-data/{selected_image_name}")
+                        histogram_response = requests.get(f"http://ai-e2e-backend:8000/get-histogram-data/{selected_image_id}")
                         if histogram_response.status_code == 200:
                             histogram_data = histogram_response.json()
                             df = pd.DataFrame.from_dict(histogram_data, orient='index', columns=['Count'])
@@ -62,7 +63,6 @@ with tab2:
                             st.bar_chart(df)
                         else:
                             st.error("Failed to fetch histogram data")
-
 
 with tab3:
     col1, col2 = st.columns([1, 2])
