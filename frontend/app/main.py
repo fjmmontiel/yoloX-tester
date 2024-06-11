@@ -70,7 +70,16 @@ with tab2:
                     selected_image_id = selected_image["id"]
                     response = requests.get(f"http://{api_url}/get-image/{selected_image_id}")
                     col2.image(response.content, caption="Selected Image", use_column_width=True)
-
+                    if response.status_code == 200:
+                        # Fetch and display histogram
+                        histogram_response = requests.get(f"http://{api_url}/get-histogram-data/{selected_image_id}")
+                        if histogram_response.status_code == 200:
+                            histogram_data = histogram_response.json()
+                            df = pd.DataFrame.from_dict(histogram_data, orient='index', columns=['Count'])
+                            st.write("Histogram of Predicted Classes:")
+                            st.bar_chart(df)
+                        else:
+                            st.error("Failed to fetch histogram data")
 
 
 with tab3:
