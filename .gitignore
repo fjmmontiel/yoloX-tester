@@ -2,3 +2,4 @@
 *.pyc
 integration/*
 *.DS_STORE
+frontend/node_modules/*
