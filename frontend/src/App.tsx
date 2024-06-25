@@ -1,29 +1,41 @@
-import Alert from "./components/Alert";
-import Button from "./components/Button";
-import ListGroup from "./components/ListGroup";
-import { useState } from "react";
+import React, { useState } from "react";
+import "./App.css";
 
-function App() {
-  let items = ["New York", "SF", "LA", "MA", "MD"];
-  const handleSelectItem = (item: string) => {
-    console.log(item);
+const ImageDisplay: React.FC = () => {
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const handleImageChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+      };
+
+      reader.readAsDataURL(file);
+    }
   };
-  const [alertVisible, setAlertVisibility] = useState(false);
+
   return (
-    <div>
-      <ListGroup
-        items={items}
-        heading="Cities"
-        onSelectItem={handleSelectItem}
-      />
-      {alertVisible && (
-        <Alert onClose={() => setAlertVisibility(false)}>
-          Hello <span>World</span>
-        </Alert>
-      )}
-      <Button onClick={() => setAlertVisibility(true)}>My button</Button>
+    <div className="App">
+      <div className="header">Image Upload and Display App</div>
+      <div className="container">
+        <div className="right-panel">
+          <input type="file" onChange={handleImageChange} />
+        </div>
+        <div className="left-panel">
+          {selectedImage ? (
+            <img src={selectedImage} alt="uploaded" />
+          ) : (
+            <p>No image uploaded</p>
+          )}
+        </div>
+      </div>
     </div>
   );
-}
+};
 
-export default App;
+export default ImageDisplay;
