@@ -7,6 +7,7 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 from core.core_functions import CoreFunctions
 from db.db_client import db
+from fastapi.middleware.cors import CORSMiddleware
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
@@ -15,6 +16,20 @@ logger = logging.getLogger(__name__)
 data_model = CoreFunctions(db=db)
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:3000",
+    "http://localhost:5174",
+    # Add other origins if necessary
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/health")
 async def health():
@@ -49,7 +64,7 @@ async def get_histogram_data(id: str):
 
 @app.get("/get-summary")
 async def get_summary():
-    logging.info("Getting summary!")
+    logging.info("Getting summary!")    
     summary = await data_model.get_summary()
     logging.info("Summary properly fetched")
     return summary
@@ -59,3 +74,8 @@ async def startup_event():
     logging.info("Loading model!")
     await data_model.load_model()
     logging.info("Model loaded succesfully!")
+
+
+async def get_raw_data_BigQuery(query):
+
+    return query_job.result()

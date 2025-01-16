@@ -13,3 +13,6 @@ build-back:
 
 build-front:
 	docker build --build-arg APP_VERSION=${IMAGE_NAME_FRONTEND} -t ${DOCKER_FULL_NAME_FRONTEND} -f DockerfileFrontend .
+
+run-front:
+	npm start

@@ -16,17 +16,17 @@ services:
       - ./integration/tmp:/tmp
       - ./backend/app:/app
 
-  yolox-frontend:
-    image: yolox-frontend:0.0.1-SNAPSHOT-REACT
-    container_name: yolox-frontend
-    hostname: yolox-frontend
-    environment:
-      - API_URL=yolox-backend:8000
-    volumes:
-      - ./frontend:/app
-    ports:
-      - "3000:3000"
-    command: npm start
+  # yolox-frontend:
+  #   image: yolox-frontend:0.0.1-SNAPSHOT-REACT
+  #   container_name: yolox-frontend
+  #   hostname: yolox-frontend
+  #   environment:
+  #     - API_URL=yolox-backend:8000
+  #   volumes:
+  #     - ./frontend:/app
+  #   ports:
+  #     - "3000:3000"
+  #   command: npm start
 
   mongo:
     image: arm64v8/mongo
